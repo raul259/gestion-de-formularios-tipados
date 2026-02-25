@@ -1,4 +1,4 @@
-﻿import { useEffect, useState } from "react";
+import { useEffect, useState } from "react";
 import "./App.css";
 import { ComponentForm } from "./components/ProductForm";
 import { ComponentList } from "./components/ProductList";
@@ -9,13 +9,8 @@ import {
   type PcComponent,
   type PcComponentDraft,
 } from "./types/product";
-import {
-  ApiError,
-  createComponent,
-  deleteComponent,
-  getComponents,
-  updateComponent,
-} from "./api/components";
+
+const INVENTORY_STORAGE_KEY = "pc-components-inventory";
 
 const generateLocalId = (): string => {
   if (typeof globalThis.crypto?.randomUUID === "function") {
@@ -69,20 +64,74 @@ const normalizeComponent = (component: PcComponent): PcComponent => ({
   ),
 });
 
-type ThemeMode = "light" | "dark";
+const isRecord = (value: unknown): value is Record<string, unknown> =>
+  value !== null && typeof value === "object" && !Array.isArray(value);
 
-const isConnectivityError = (error: unknown): boolean =>
-  error instanceof ApiError && error.isNetworkError;
-
-const isMissingApiRouteError = (error: unknown): boolean =>
-  error instanceof ApiError && error.statusCode === 404;
-
-const getUserErrorMessage = (error: unknown, fallbackMessage: string): string => {
-  if (error instanceof ApiError && error.message.trim().length > 0) {
-    return error.message;
+const parseStoredComponents = (rawValue: string): PcComponent[] => {
+  let parsedValue: unknown;
+  try {
+    parsedValue = JSON.parse(rawValue);
+  } catch {
+    return [];
   }
-  return fallbackMessage;
+
+  if (!Array.isArray(parsedValue)) {
+    return [];
+  }
+
+  const components: PcComponent[] = [];
+  for (const item of parsedValue) {
+    if (!isRecord(item)) {
+      continue;
+    }
+
+    const id = typeof item.id === "string" ? item.id : generateLocalId();
+    const name = typeof item.name === "string" ? item.name : "";
+    const category = normalizeCategory(typeof item.category === "string" ? item.category : "cpu");
+    const brand = typeof item.brand === "string" ? item.brand : "";
+    const quantityRaw = Reflect.get(item, "quantity");
+    const quantity =
+      typeof quantityRaw === "number" && Number.isInteger(quantityRaw) ? quantityRaw : 0;
+    const inStock = typeof item.inStock === "boolean" ? item.inStock : quantity > 0;
+    const especificacion =
+      typeof item.especificacion === "string" ? item.especificacion : "";
+
+    components.push(
+      normalizeComponent({
+        id,
+        sku: typeof item.sku === "string" ? item.sku : "",
+        name,
+        especificacion,
+        category,
+        brand,
+        quantity,
+        inStock,
+      }),
+    );
+  }
+
+  return components;
 };
+
+const loadFromStorage = (): PcComponent[] => {
+  if (typeof window === "undefined") {
+    return [];
+  }
+  const rawValue = window.localStorage.getItem(INVENTORY_STORAGE_KEY);
+  if (rawValue === null) {
+    return [];
+  }
+  return parseStoredComponents(rawValue);
+};
+
+const saveToStorage = (components: PcComponent[]): void => {
+  if (typeof window === "undefined") {
+    return;
+  }
+  window.localStorage.setItem(INVENTORY_STORAGE_KEY, JSON.stringify(components));
+};
+
+type ThemeMode = "light" | "dark";
 
 const getInitialTheme = (): ThemeMode => {
   if (typeof window === "undefined") {
@@ -106,38 +155,13 @@ function App() {
   const [isLoading, setIsLoading] = useState<boolean>(true);
   const [isSaving, setIsSaving] = useState<boolean>(false);
   const [errorMessage, setErrorMessage] = useState<string | null>(null);
-  const [loadError, setLoadError] = useState<string | null>(null);
-  const [isOfflineMode, setIsOfflineMode] = useState<boolean>(false);
   const [themeMode, setThemeMode] = useState<ThemeMode>(getInitialTheme);
 
-  const loadComponents = async (): Promise<void> => {
-    try {
-      setIsLoading(true);
-      setLoadError(null);
-      const response = await getComponents();
-      setComponents(response.map(normalizeComponent));
-      setErrorMessage(null);
-      setIsOfflineMode(false);
-    } catch (error) {
-      setLoadError("No se pudo cargar el inventario desde la API.");
-      if (isConnectivityError(error) || isMissingApiRouteError(error)) {
-        setErrorMessage(
-          "API no disponible. Puedes seguir trabajando en modo local temporal.",
-        );
-        setIsOfflineMode(true);
-      } else {
-        setErrorMessage(
-          getUserErrorMessage(error, "No se pudo cargar el inventario desde la API."),
-        );
-        setIsOfflineMode(false);
-      }
-    } finally {
-      setIsLoading(false);
-    }
-  };
-
   useEffect(() => {
-    void loadComponents();
+    setIsLoading(true);
+    const storedComponents = loadFromStorage();
+    setComponents(storedComponents);
+    setIsLoading(false);
   }, []);
 
   useEffect(() => {
@@ -173,105 +197,40 @@ function App() {
       return;
     }
 
-    try {
-      setIsSaving(true);
-      setErrorMessage(null);
+    setIsSaving(true);
+    setErrorMessage(null);
 
-      if (isOfflineMode) {
-        if (editingComponent === null) {
-          const localCreated: PcComponent = { id: generateLocalId(), ...normalizedDraft };
-          setComponents((previous) => [...previous, localCreated]);
-          return;
-        }
-
-        setComponents((previous) =>
-          previous.map((component) =>
-            component.id === editingComponent.id
-              ? { id: editingComponent.id, ...normalizedDraft }
-              : component,
-          ),
-        );
-        setEditingComponent(null);
-        return;
-      }
-
-      if (editingComponent === null) {
-        const created = await createComponent(normalizedDraft);
-        setComponents((previous) => [...previous, created]);
-        return;
-      }
-
-      const updated = await updateComponent(editingComponent.id, normalizedDraft);
-      setComponents((previous) =>
-        previous.map((component) => (component.id === updated.id ? updated : component)),
-      );
-      setEditingComponent(null);
-    } catch (error) {
-      if (isConnectivityError(error)) {
-        setErrorMessage(
-          "No se pudo guardar en backend por falta de conexion. Activo modo local temporal para que no se pierda tu flujo.",
-        );
-        setIsOfflineMode(true);
-
-        if (editingComponent === null) {
-          const localCreated: PcComponent = { id: generateLocalId(), ...normalizedDraft };
-          setComponents((previous) => [...previous, localCreated]);
-          return;
-        }
-
-        setComponents((previous) =>
-          previous.map((component) =>
-            component.id === editingComponent.id
-              ? { id: editingComponent.id, ...normalizedDraft }
-              : component,
-          ),
-        );
-        setEditingComponent(null);
-        return;
-      }
-
-      setErrorMessage(getUserErrorMessage(error, "No se pudo guardar el componente."));
-    } finally {
+    if (editingComponent === null) {
+      const localCreated: PcComponent = { id: generateLocalId(), ...normalizedDraft };
+      const nextComponents = [...components, localCreated];
+      setComponents(nextComponents);
+      saveToStorage(nextComponents);
       setIsSaving(false);
+      return;
     }
+
+    const nextComponents = components.map((component) =>
+      component.id === editingComponent.id
+        ? { id: editingComponent.id, ...normalizedDraft }
+        : component,
+    );
+    setComponents(nextComponents);
+    saveToStorage(nextComponents);
+    setEditingComponent(null);
+    setIsSaving(false);
   };
 
   const handleEditComponent = (component: PcComponent): void => {
     setEditingComponent(normalizeComponent(component));
   };
 
-  const handleDeleteComponent = async (id: string): Promise<void> => {
-    try {
-      setErrorMessage(null);
-
-      if (isOfflineMode) {
-        setComponents((previous) => previous.filter((component) => component.id !== id));
-        if (editingComponent !== null && editingComponent.id === id) {
-          setEditingComponent(null);
-        }
-        return;
-      }
-
-      await deleteComponent(id);
-      setComponents((previous) => previous.filter((component) => component.id !== id));
-
-      if (editingComponent !== null && editingComponent.id === id) {
-        setEditingComponent(null);
-      }
-    } catch (error) {
-      if (isConnectivityError(error)) {
-        setErrorMessage(
-          "No se pudo eliminar en backend por falta de conexion. Se eliminara en modo local temporal.",
-        );
-        setIsOfflineMode(true);
-        setComponents((previous) => previous.filter((component) => component.id !== id));
-        if (editingComponent !== null && editingComponent.id === id) {
-          setEditingComponent(null);
-        }
-        return;
-      }
-
-      setErrorMessage(getUserErrorMessage(error, "No se pudo eliminar el componente."));
+  const handleDeleteComponent = (id: string): void => {
+    setErrorMessage(null);
+    const nextComponents = components.filter((component) => component.id !== id);
+    setComponents(nextComponents);
+    saveToStorage(nextComponents);
+    if (editingComponent !== null && editingComponent.id === id) {
+      setEditingComponent(null);
     }
   };
 
@@ -290,9 +249,7 @@ function App() {
       component.sku.toLowerCase().includes(normalizedSearchTerm) ||
       categoryKey.includes(normalizedSearchTerm) ||
       categoryLabel.includes(normalizedSearchTerm);
-    const byCategory =
-      activeCategoryFilter === null ||
-      categoryKey === activeCategoryFilter;
+    const byCategory = activeCategoryFilter === null || categoryKey === activeCategoryFilter;
     return bySearch && byCategory;
   });
   const emptyInventoryMessage =
@@ -363,24 +320,9 @@ function App() {
             </div>
           ) : null}
 
-          {loadError !== null ? (
-            <div className="status-error-block" role="alert">
-              <p className="status-error">{loadError}</p>
-              <button type="button" className="button-muted" onClick={() => void loadComponents()}>
-                Reintentar carga
-              </button>
-            </div>
-          ) : null}
-
           {errorMessage !== null ? (
             <p aria-live="polite" className="status-error">
               {errorMessage}
-            </p>
-          ) : null}
-          {isOfflineMode ? (
-            <p aria-live="polite" className="status-text">
-              Modo local activo: para sincronizar con API ejecuta <code>npm run dev:backend</code> en
-              local o configura <code>VITE_API_URL</code> en produccion.
             </p>
           ) : null}
 
