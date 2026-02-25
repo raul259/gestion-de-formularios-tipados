@@ -2,20 +2,6 @@
 
 Aplicacion `React + TypeScript` para gestionar inventario de componentes informaticos mediante un formulario controlado y tipado estricto.
 
-## Objetivo academico cubierto
-
-- `useState` con tipos explicitos (`PcComponent[]`, `PcComponent | null`, `PcComponentDraft`, etc.)
-- Eventos tipados:
-  - `ChangeEvent<HTMLInputElement>`
-  - `ChangeEvent<HTMLSelectElement>`
-  - `FormEvent<HTMLFormElement>`
-  - `MouseEvent<HTMLButtonElement>`
-- Props tipadas entre componentes (`App` -> `ComponentForm` y `ComponentList`)
-- Sin `any`
-- Sin cast forzado de elementos del DOM
-- `strict: true` habilitado en TypeScript
-- Uso de Radix (`@radix-ui/react-label`)
-
 ## Funcionalidades principales
 
 - CRUD de componentes (crear, editar, eliminar, listar)
