@@ -62,23 +62,6 @@ npm run build          # tsc + vite build
 npm run lint           # eslint
 ```
 
-## Cumplimiento de restricciones (actividad)
-
-- Modelo tipado principal:
-  - `PcComponent` y `PcComponentDraft` en `src/types/product.ts`
-- `useState` tipado:
-  - Ejemplos: `useState<PcComponent[]>([])`, `useState<PcComponent | null>(null)`
-- Eventos tipados:
-  - `ChangeEvent<HTMLInputElement | HTMLSelectElement>`
-  - `FormEvent<HTMLFormElement>`
-  - `MouseEvent<HTMLButtonElement>`
-- Formulario 100% controlado por estado:
-  - `input`, `select`, `checkbox` en `src/components/ProductForm.tsx`
-- Reglas de tipado estricto:
-  - Sin `any`
-  - Sin `as HTMLInputElement` ni cast forzados de DOM
-  - Sin tipado implicito incorrecto
-
 ## Correcciones aplicadas (revision tecnica)
 
 - Metrica de inventario:
