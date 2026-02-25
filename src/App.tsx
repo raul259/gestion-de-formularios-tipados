@@ -74,6 +74,9 @@ type ThemeMode = "light" | "dark";
 const isConnectivityError = (error: unknown): boolean =>
   error instanceof ApiError && error.isNetworkError;
 
+const isMissingApiRouteError = (error: unknown): boolean =>
+  error instanceof ApiError && error.statusCode === 404;
+
 const getUserErrorMessage = (error: unknown, fallbackMessage: string): string => {
   if (error instanceof ApiError && error.message.trim().length > 0) {
     return error.message;
@@ -117,9 +120,9 @@ function App() {
       setIsOfflineMode(false);
     } catch (error) {
       setLoadError("No se pudo cargar el inventario desde la API.");
-      if (isConnectivityError(error)) {
+      if (isConnectivityError(error) || isMissingApiRouteError(error)) {
         setErrorMessage(
-          "Backend no disponible. Puedes seguir trabajando en modo local temporal.",
+          "API no disponible. Puedes seguir trabajando en modo local temporal.",
         );
         setIsOfflineMode(true);
       } else {
@@ -376,8 +379,8 @@ function App() {
           ) : null}
           {isOfflineMode ? (
             <p aria-live="polite" className="status-text">
-              Modo local activo: ejecuta <code>npm run dev:backend</code> para volver a sincronizar
-              con API.
+              Modo local activo: para sincronizar con API ejecuta <code>npm run dev:backend</code> en
+              local o configura <code>VITE_API_URL</code> en produccion.
             </p>
           ) : null}
 
