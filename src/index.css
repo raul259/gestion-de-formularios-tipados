@@ -1,0 +1,93 @@
+:root {
+  font-family:
+    "Space Grotesk",
+    "IBM Plex Sans",
+    "Segoe UI",
+    sans-serif;
+  line-height: 1.4;
+  font-weight: 400;
+  font-synthesis: none;
+  text-rendering: optimizeLegibility;
+  -webkit-font-smoothing: antialiased;
+  -moz-osx-font-smoothing: grayscale;
+  --surface-0: #ede9e3;
+  --surface-1: #f7f3ee;
+  --surface-2: #f1ece5;
+  --text-primary: #25323a;
+  --text-secondary: #3f5059;
+  --text-tertiary: #5d6a71;
+  --text-muted: #7f8a90;
+  --edge-faint: #d4ccc2;
+  --edge-soft: #c9beb2;
+  --edge-strong: #6d7268;
+  --control-bg: #efeae3;
+  --control-border: #b6ab9e;
+  --accent-soft: #f0dfc5;
+  --accent-edge: #ccab78;
+  --accent-ink: #97672f;
+  --button-bg: #25323a;
+  --button-text: #f4f6f7;
+  --button-danger-bg-hover: #f8e8e5;
+  --critical-row-bg: #f9ece9;
+  --critical-row-border: #d38f84;
+  --critical-badge-bg: #f5ddd8;
+  --critical-badge-border: #cf7c6d;
+  --critical-badge-text: #922f1f;
+  color: var(--text-primary);
+  background: var(--surface-0);
+  --page-spot: #f8f1e6;
+  --page-base-top: #ece7e1;
+  --page-base-bottom: #e7e2da;
+}
+
+:root[data-theme="dark"] {
+  --surface-0: #151a1f;
+  --surface-1: #1c232b;
+  --surface-2: #232b34;
+  --text-primary: #e7edf2;
+  --text-secondary: #c4d0d9;
+  --text-tertiary: #9db0be;
+  --text-muted: #7f92a0;
+  --edge-faint: #354352;
+  --edge-soft: #405062;
+  --edge-strong: #6f8396;
+  --control-bg: #1b232c;
+  --control-border: #4f5f72;
+  --accent-soft: #2d3f4d;
+  --accent-edge: #4a6b84;
+  --accent-ink: #9ac5e6;
+  --button-bg: #6f8396;
+  --button-text: #0f141a;
+  --button-danger-bg-hover: #3a2523;
+  --critical-row-bg: #3a2523;
+  --critical-row-border: #8f4c42;
+  --critical-badge-bg: #4a2d2a;
+  --critical-badge-border: #b46458;
+  --critical-badge-text: #ffd2cb;
+  --page-spot: #213344;
+  --page-base-top: #14191e;
+  --page-base-bottom: #101419;
+}
+
+* {
+  box-sizing: border-box;
+}
+
+body {
+  margin: 0;
+  min-width: 320px;
+  background:
+    radial-gradient(circle at 100% 0, var(--page-spot) 0%, rgba(248, 241, 230, 0) 30%),
+    linear-gradient(180deg, var(--page-base-top) 0%, var(--page-base-bottom) 100%);
+}
+
+h1 {
+  margin: 0;
+  font-size: clamp(1.45rem, 2.4vw, 2rem);
+  line-height: 1.1;
+  letter-spacing: -0.02em;
+}
+
+.text-balance {
+  text-wrap: balance;
+}
