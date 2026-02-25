@@ -72,6 +72,40 @@ npm run dev:frontend
 - Backend: `http://localhost:3001`
 - Healthcheck: `http://localhost:3001/api/health`
 
+## Configuracion de API en produccion
+
+En desarrollo, Vite usa proxy a `http://localhost:3001` para rutas `/api`.
+
+En produccion (ejemplo: Vercel), define la variable:
+
+- `VITE_API_URL`: URL base de tu backend (ejemplo: `https://tu-backend.com`)
+
+El frontend llamara automaticamente a:
+- `https://tu-backend.com/api/components`
+- `https://tu-backend.com/api/health`
+
+## Acceso para otras personas
+
+Si otra persona va a usar el formulario desde internet, necesita:
+
+1. Frontend publicado (ejemplo: Vercel).
+2. Backend publicado (Render, Railway, Fly.io, VPS, etc.).
+3. Variable `VITE_API_URL` en el frontend apuntando al backend publico.
+
+Flujo recomendado:
+
+1. Publica el backend y verifica:
+   - `GET https://tu-backend.com/api/health`
+2. En el frontend (Vercel), configura:
+   - `VITE_API_URL=https://tu-backend.com`
+3. Redeploy del frontend.
+4. Comparte la URL del frontend con tus usuarios.
+
+Notas importantes:
+
+- Si no configuras `VITE_API_URL`, en produccion el frontend intentara usar su propio dominio para `/api` y puede fallar con `404`.
+- El backend actual usa memoria (no base de datos): si se reinicia, los datos se pierden. Para uso real por terceros, conviene persistencia (SQLite/PostgreSQL).
+
 ## Scripts
 
 ```bash

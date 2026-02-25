@@ -36,6 +36,17 @@ const defaultHeaders: HeadersInit = {
   "Content-Type": "application/json",
 };
 
+const API_BASE_URL = (import.meta.env.VITE_API_URL ?? "").trim();
+
+const buildApiUrl = (path: string): string => {
+  if (API_BASE_URL.length === 0) {
+    return path;
+  }
+  const normalizedBase = API_BASE_URL.replace(/\/+$/, "");
+  const normalizedPath = path.startsWith("/") ? path : `/${path}`;
+  return `${normalizedBase}${normalizedPath}`;
+};
+
 const parseApiError = async (response: Response): Promise<ApiError> => {
   let payload: ApiErrorPayload | null = null;
 
@@ -70,7 +81,7 @@ const parseApiError = async (response: Response): Promise<ApiError> => {
 
 const executeRequest = async (path: string, init?: RequestInit): Promise<Response> => {
   try {
-    const response = await fetch(path, {
+    const response = await fetch(buildApiUrl(path), {
       headers: {
         ...defaultHeaders,
         ...init?.headers,
