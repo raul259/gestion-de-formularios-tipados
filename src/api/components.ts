@@ -44,6 +44,14 @@ const buildApiUrl = (path: string): string => {
   }
   const normalizedBase = API_BASE_URL.replace(/\/+$/, "");
   const normalizedPath = path.startsWith("/") ? path : `/${path}`;
+
+  // Soporta VITE_API_URL con o sin sufijo /api para evitar rutas duplicadas /api/api/*
+  const baseEndsWithApi = /\/api$/i.test(normalizedBase);
+  const pathStartsWithApi = /^\/api(\/|$)/i.test(normalizedPath);
+  if (baseEndsWithApi && pathStartsWithApi) {
+    return `${normalizedBase}${normalizedPath.replace(/^\/api/i, "")}`;
+  }
+
   return `${normalizedBase}${normalizedPath}`;
 };
 

@@ -78,11 +78,22 @@ En desarrollo, Vite usa proxy a `http://localhost:3001` para rutas `/api`.
 
 En produccion (ejemplo: Vercel), define la variable:
 
-- `VITE_API_URL`: URL base de tu backend (ejemplo: `https://tu-backend.com`)
+- `VITE_API_URL`: URL base de tu backend.
+  - Ejemplo recomendado: `https://tu-backend.com`
+  - Tambien soportado: `https://tu-backend.com/api`
 
 El frontend llamara automaticamente a:
 - `https://tu-backend.com/api/components`
 - `https://tu-backend.com/api/health`
+
+Checklist rapido si aparece `404` en Vercel:
+
+1. Verifica que `VITE_API_URL` existe en Vercel (Production).
+2. Haz redeploy despues de guardar variables.
+3. Comprueba que `GET <VITE_API_URL>/health` o `GET <VITE_API_URL>/api/health` responde.
+4. Revisa en DevTools la URL real que falla (`/api/components`):
+   - Si apunta al dominio del frontend, falta `VITE_API_URL`.
+   - Si apunta a backend pero responde 404, la ruta backend no coincide.
 
 ## Acceso para otras personas
 
